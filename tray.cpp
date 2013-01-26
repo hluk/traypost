@@ -55,7 +55,7 @@ QString escapeHtml(const QString &str)
 } // namespace
 
 const QString timeFormat("dd.MM.yyyy hh:mm:ss.zzz");
-const QString lineFormat("<p><b>%1</b>: %2</p>");
+const QString lineFormat("<p><b>%1</b>: %2</p>\n");
 constexpr int stdinBatchSize = 256;
 
 class TrayPrivate : QObject {
@@ -221,7 +221,7 @@ public:
 
         auto layout = new QVBoxLayout(dialog);
 
-        auto recordCount = records_.split('\n').size();
+        auto recordCount = records_.split('\n').size() - 1;
         auto label = new QLabel( tr("Number of records: %1").arg(recordCount), dialog );
         layout->addWidget(label);
 
