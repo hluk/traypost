@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
     app.setQuitOnLastWindowClosed(false);
 
     QIcon icon;
-    QString toolTip;
+    QString toolTip( QObject::tr("No messages available.") );
     QString iconText;
     QColor textColor;
     QColor textOutlineColor;
