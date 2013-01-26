@@ -3,18 +3,18 @@
 
     This file is part of TrayPost.
 
-    CopyQ is free software: you can redistribute it and/or modify
+    TrayPost is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    CopyQ is distributed in the hope that it will be useful,
+    TrayPost is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with CopyQ.  If not, see <http://www.gnu.org/licenses/>.
+    along with TrayPost.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "tray.h"
@@ -29,7 +29,6 @@
 #include <QMenu>
 #include <QPainter>
 #include <QPointer>
-#include <QSocketNotifier>
 #include <QSystemTrayIcon>
 #include <QTextEdit>
 
@@ -55,22 +54,22 @@ QString escapeHtml(const QString &str)
 } // namespace
 
 const QString timeFormat("dd.MM.yyyy hh:mm:ss.zzz");
-const QString lineFormat("<p><b>%1</b>: %2</p>\n");
-constexpr int stdinBatchSize = 256;
+const QString recordFormat("<p><small><b>%1</b></small>: %2</p>");
+constexpr int stdinBatchSize = 250;
+constexpr int maxMessageLines = 10;
 
-class TrayPrivate : QObject {
+class TrayPrivate : public QObject {
     Q_OBJECT
 public:
     TrayPrivate(Tray *parent)
         : QObject(parent)
         , q_ptr(parent)
-        , socketNotifier_( new QSocketNotifier(0, QSocketNotifier::Read) )
         , lines_(0)
+        , inputRead_(false)
     {
+        tray_.setToolTip( tr("No messages available.") );
         createMenu();
         connectSignals();
-
-        connect(socketNotifier_, SIGNAL(activated(int)), this, SLOT(readLine()));
     }
 
     void createMenu()
@@ -190,19 +189,6 @@ public:
         setIconText(iconText_);
     }
 
-    void setToolTip(const QString &text)
-    {
-        auto record = lineFormat
-                .arg( QDateTime::currentDateTime().toString(timeFormat) )
-                .arg( escapeHtml(text) );
-        records_.append(record);
-
-        tray_.setToolTip( tray_.toolTip() + record);
-        setIconText( QString::number(++lines_) );
-
-        tray_.showMessage(QString("TrayPost"), text);
-    }
-
     void resetMessages()
     {
         lines_ = 0;
@@ -215,32 +201,70 @@ public:
         if ( records_.isEmpty() )
             return;
 
-        auto dialog = new QDialog();
-        dialog->setWindowTitle( tr("TrayPost - Log") );
-        dialog->setWindowIcon(icon_);
+        if (dialogLog_ != nullptr) {
+            dialogLog_->show();
+            dialogLog_->activateWindow();
+            dialogLog_->raise();
+            dialogLog_->setFocus();
+            return;
+        }
 
-        auto layout = new QVBoxLayout(dialog);
+        dialogLog_ = new QDialog();
+        dialogLog_->setWindowTitle( tr("TrayPost - Log") );
+        dialogLog_->setWindowIcon(icon_);
 
-        auto recordCount = records_.split('\n').size() - 1;
-        auto label = new QLabel( tr("Number of records: %1").arg(recordCount), dialog );
-        layout->addWidget(label);
+        auto layout = new QVBoxLayout(dialogLog_);
 
-        auto edit = new QTextEdit(dialog);
-        edit->setHtml(records_);
-        edit->setReadOnly(true);
-        layout->addWidget(edit);
+        textEditLog_ = new QTextEdit(dialogLog_);
+        textEditLog_->setHtml( records_.join(QString()) );
+        textEditLog_->setReadOnly(true);
+        layout->addWidget(textEditLog_);
 
-        auto buttons = new QDialogButtonBox(QDialogButtonBox::Ok, Qt::Horizontal, dialog);
+        auto buttons = new QDialogButtonBox(QDialogButtonBox::Ok, Qt::Horizontal, dialogLog_);
         layout->addWidget(buttons);
 
-        connect( dialog, SIGNAL(finished(int)), dialog, SLOT(deleteLater()) );
-        connect( buttons, SIGNAL(accepted()), dialog, SLOT(accept()) );
+        connect( dialogLog_, SIGNAL(finished(int)), dialogLog_, SLOT(deleteLater()) );
+        connect( buttons, SIGNAL(accepted()), dialogLog_, SLOT(accept()) );
 
-        dialog->adjustSize();
-        dialog->show();
+        dialogLog_->resize(320, 480);
+        dialogLog_->show();
     }
 
-private slots:
+    void onInputLine(const QString &line)
+    {
+        inputRead_ = true;
+        setToolTip(line);
+    }
+
+    void onInputEnd()
+    {
+        if (inputRead_)
+            setToolTip( tr("-- END OF INPUT --"), true );
+    }
+
+public slots:
+    void setToolTip(const QString &text, bool endOfInput = false)
+    {
+        auto record = recordFormat
+                .arg( QDateTime::currentDateTime().toString(timeFormat) )
+                .arg( endOfInput ? QString("<b><u>%1</u></b>").arg(text) : escapeHtml(text) );
+        records_.append(record);
+
+        QString msg = records_.size() > maxMessageLines ? QString("<p>...</p>") : QString();
+        for (int i = qMax(0, records_.size() - maxMessageLines); i < records_.size(); ++i)
+            msg.append(records_[i]);
+        tray_.setToolTip(msg);
+
+        tray_.showMessage(QString("TrayPost"), text);
+
+        setIconText( QString::number(++lines_) );
+
+        if (textEditLog_ != nullptr) {
+            textEditLog_->append(record);
+            showLog();
+        }
+    }
+
     void onTrayActivated(QSystemTrayIcon::ActivationReason reason)
     {
         Q_Q(Tray);
@@ -250,59 +274,10 @@ private slots:
             auto act = menu_.defaultAction();
             if (act != nullptr)
                 act->trigger();
+            if ( dialogLog_ != nullptr && dialogLog_->hasFocus() )
+                dialogLog_->hide();
         } else if (reason == QSystemTrayIcon::MiddleClick) {
             q->exit();
-        }
-    }
-
-    void readLine()
-    {
-        if (socketNotifier_ == nullptr)
-            return;
-
-        static char buffer[BUFSIZ];
-        static QByteArray line;
-        static struct timeval stdin_tv = {0,0};
-        fd_set stdin_fds;
-
-        /* disable stdin buffering (otherwise select waits on new line) */
-        setbuf(stdin, NULL);
-
-        /*
-         * interrupt after reading at most N lines and
-         * resume after processing pending events in event loop
-         */
-        for( int i = 0; i < stdinBatchSize; ++i ) {
-            /* set stdin */
-            FD_ZERO(&stdin_fds);
-            FD_SET(0, &stdin_fds);
-
-            /* check if data available */
-            if ( select(1, &stdin_fds, NULL, NULL, &stdin_tv) <= 0 )
-                break;
-
-            /* read data */
-            if ( fgets(buffer, BUFSIZ, stdin) ) {
-                line.append(buffer);
-                /* each line is one item */
-                if ( line.endsWith('\n') ) {
-                    line.resize( line.size()-1 );
-                    setToolTip( QString::fromLocal8Bit(line.constData()) );
-                    line.clear();
-                }
-            } else {
-                break;
-            }
-        }
-
-        if ( ferror(stdin) ) {
-            perror( tr("Error reading stdin!").toLocal8Bit().constData() );
-        } else if ( feof(stdin) ) {
-            if ( !line.isNull() )
-                setToolTip( QString::fromLocal8Bit(line.constData()) );
-            socketNotifier_->deleteLater();
-            socketNotifier_ = nullptr;
-            return;
         }
     }
 
@@ -314,6 +289,8 @@ protected:
     QMenu menu_;
     QPointer<QAction> actionReset_;
     QPointer<QAction> actionShowLog_;
+    QPointer<QDialog> dialogLog_;
+    QPointer<QTextEdit> textEditLog_;
     QIcon icon_;
 
     QString iconText_;
@@ -321,10 +298,11 @@ protected:
     QColor iconTextColor_;
     QColor iconTextOutlineColor_;
 
-    QSocketNotifier *socketNotifier_;
     int lines_;
 
-    QString records_;
+    QStringList records_;
+
+    bool inputRead_;
 };
 
 Tray::Tray(QObject *parent)
@@ -336,7 +314,7 @@ Tray::Tray(QObject *parent)
 void Tray::setToolTip(const QString &text)
 {
     Q_D(Tray);
-    d->tray_.setToolTip(text);
+    d->setToolTip(text);
 }
 
 void Tray::setIcon(const QIcon &icon)
@@ -361,6 +339,19 @@ void Tray::show()
 {
     Q_D(Tray);
     d->show();
+}
+
+void Tray::onInputLine(const QString &line)
+{
+    Q_D(Tray);
+    d->onInputLine(line);
+    emit readLine();
+}
+
+void Tray::onInputEnd()
+{
+    Q_D(Tray);
+    d->onInputEnd();
 }
 
 void Tray::exit()

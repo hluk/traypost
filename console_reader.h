@@ -17,18 +17,28 @@
     along with TrayPost.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "launcher.h"
+#pragma once
 
-#include <QApplication>
-#include <QThread>
+#include <QObject>
+#include <QTextStream>
 
-int main(int argc, char *argv[])
-{
-    QApplication app(argc, argv);
-    app.setQuitOnLastWindowClosed(false);
+namespace traypost {
 
-    traypost::Launcher launcher;
-    launcher.start();
+class ConsoleReader : public QObject {
+    Q_OBJECT
+public:
+    explicit ConsoleReader(QObject *parent = nullptr);
 
-    return app.exec();
-}
+signals:
+    void newLine(const QString &line);
+
+    void finished();
+
+public slots:
+    void readLines();
+
+private:
+    QTextStream in_;
+};
+
+} // namespace traypost

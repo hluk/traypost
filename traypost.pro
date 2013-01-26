@@ -11,9 +11,13 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = traypost
 TEMPLATE = app
 
+SOURCES += main.cpp \
+    tray.cpp \
+    console_reader.cpp \
+    launcher.cpp
 
-SOURCES += main.cpp tray.cpp
-
-HEADERS  += tray.h
+HEADERS  += tray.h \
+    launcher.h \
+    console_reader.h
 
 QMAKE_CXXFLAGS += -std=c++0x
