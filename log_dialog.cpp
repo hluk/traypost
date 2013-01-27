@@ -77,7 +77,7 @@ void LogDialog::addRecord(const Record &record)
 
     if ( isFilteredOut(item, ui->lineEditSearch->text()) )
         item->setHidden(true);
-    else if (atBottom)
+    else if (atBottom && scrollBar->value() != 0)
         ui->listLog->scrollToItem(item);
 }
 
