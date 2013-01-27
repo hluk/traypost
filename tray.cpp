@@ -246,8 +246,11 @@ public slots:
 
     void onItemActivated(int row)
     {
+        Q_Q(Tray);
         if ( (row + (endOfInput_ ? 1 : 0)) < records_.size() ) {
             std::cout << records_[row].text.toStdString() << std::endl;
+            if (selectMode_)
+                q->exit();
         }
     }
 

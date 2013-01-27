@@ -186,12 +186,12 @@ void printHelp(const QString &program)
                + QString("\n                                ")
                + QObject::tr("Example: '<p><small><b>%2</b></small><br />%1</p>'") );
     printLine();
-    printLine( QString("  --record-end                  ")
+    printLine( QString("  --record-end  ")
                + QObject::tr("Record end of stdin.") );
-    printLine( QString("  --show-log                    ")
+    printLine( QString("  --show-log    ")
                + QObject::tr("Show log dialog at start.") );
-    printLine( QString("  --select                      ")
-               + QObject::tr("Open log dialog and exit after it is closed.") );
+    printLine( QString("  --select      ")
+               + QObject::tr("Open log dialog and exit after it's closed or item is selected.") );
     printLine();
     printLine( QString("TrayPost Desktop Tray Notifier " VERSION " (hluk@email.cz)") );
     exit(0);
