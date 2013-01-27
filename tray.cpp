@@ -45,7 +45,9 @@ public:
         , q_ptr(parent)
         , lines_(0)
         , inputRead_(false)
+        , recordEnd_(false)
         , endOfInput_(false)
+        , selectMode_(false)
         , timeout_(8000)
     {
         tray_.setToolTip( tr("No messages available.") );
@@ -62,11 +64,9 @@ public:
         // Reset
         actionReset_ = menu_.addAction( QIcon::fromTheme("edit-clear"), tr("&Reset"),
                                         q, SLOT(resetMessages()) );
-        actionReset_->setVisible(true);
 
         actionShowLog_ = menu_.addAction( QIcon::fromTheme("document-open"), tr("&Show Log"),
                                           q, SLOT(showLog()) );
-        actionShowLog_->setVisible(true);
 
         // Exit
         menu_.addAction( QIcon::fromTheme("application-exit"), tr("E&xit"),
@@ -194,7 +194,7 @@ public:
         dialogLog_->resize(480, 480);
         dialogLog_->show();
 
-        connect( dialogLog_, SIGNAL(finished(int)), dialogLog_, SLOT(deleteLater()) );
+        connect( dialogLog_, SIGNAL(finished(int)), this, SLOT(onLogDialogClosed()) );
         connect( dialogLog_, SIGNAL(itemActivated(int)), this, SLOT(onItemActivated(int)) );
     }
 
@@ -206,7 +206,7 @@ public:
 
     void onInputEnd()
     {
-        if (inputRead_)
+        if (inputRead_ && recordEnd_)
             setToolTip( tr("-- END OF INPUT --"), true );
     }
 
@@ -264,6 +264,14 @@ public slots:
                           timeout_);
     }
 
+    void onLogDialogClosed()
+    {
+        Q_Q(Tray);
+        dialogLog_->deleteLater();
+        if (selectMode_)
+            q->exit();
+    }
+
 protected:
     Tray * const q_ptr;
     Q_DECLARE_PUBLIC(Tray)
@@ -289,7 +297,10 @@ protected:
     QString timeFormat_;
     QString recordFormat_;
 
+    bool recordEnd_;
     bool endOfInput_;
+
+    bool selectMode_;
 
     int timeout_;
     QTimer timerMessage_;
@@ -341,6 +352,18 @@ void Tray::setMessageFormat(const QString &format)
 {
     Q_D(Tray);
     d->recordFormat_ = format;
+}
+
+void Tray::setRecordInputEnd(bool enable)
+{
+    Q_D(Tray);
+    d->recordEnd_ = enable;
+}
+
+void Tray::setSelectMode(bool enable)
+{
+    Q_D(Tray);
+    d->selectMode_ = enable;
 }
 
 void Tray::show()

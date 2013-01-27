@@ -70,6 +70,16 @@ public:
     void setMessageFormat(const QString &format);
 
     /**
+     * Add special item "END OF INPUT" after stdin read.
+     */
+    void setRecordInputEnd(bool enable);
+
+    /**
+     * Exit after the dialog is closed if enabled.
+     */
+    void setSelectMode(bool enable);
+
+    /**
      * Show tray icon.
      */
     void show();

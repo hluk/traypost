@@ -182,6 +182,10 @@ void printHelp(const QString &program)
                + QObject::tr("Example: '<p><small><b>%1</b></small><br />%2</p>'") );
     printLine( QString("  --show-log                    ")
                + QObject::tr("Show log dialog at start.") );
+    printLine( QString("  --record-end                  ")
+               + QObject::tr("Record end of stdin.") );
+    printLine( QString("  --select                      ")
+               + QObject::tr("Open log dialog and exit after it is closed.") );
     printLine();
     printLine( QString("TrayPost Desktop Tray Notifier " VERSION " (hluk@email.cz)") );
     exit(0);
@@ -223,6 +227,8 @@ void Launcher::start()
     QString timeFormat("dd.MM.yyyy hh:mm:ss.zzz");
     QString recordFormat("<p><small><b>%2</b></small><br />%1</p>");
     bool showLog = false;
+    bool recordEnd = false;
+    bool selectMode = false;
     int timeout = 8000;
 
     Arguments args( qApp->arguments() );
@@ -288,6 +294,10 @@ void Launcher::start()
             recordFormat = value;
         } else if (name == "--show-log") {
             showLog = true;
+        } else if (name == "--select") {
+            selectMode = true;
+        } else if (name == "--record-end") {
+            recordEnd = true;
         } else {
             error( QObject::tr("Unknown option \"%1\".").arg(name), 2 );
         }
@@ -309,8 +319,10 @@ void Launcher::start()
     tray_->setIconTextStyle(font, textColor, textOutlineColor);
     tray_->setTimeFormat(timeFormat);
     tray_->setMessageFormat(recordFormat);
+    tray_->setRecordInputEnd(recordEnd);
+    tray_->setSelectMode(selectMode);
     tray_->show();
-    if (showLog)
+    if (showLog || selectMode)
         tray_->showLog();
 
     connect( reader_, SIGNAL(finished()), tray_, SLOT(onInputEnd()) );
