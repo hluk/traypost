@@ -32,7 +32,8 @@ Command Line
 
       --record-end  Record end of stdin.
       --show-log    Show log dialog at start.
-      --select      Open log dialog and exit after it's closed or item is selected.
+      --select      Open log dialog and exit after item is selected (exit code is 0) or
+                    dialog is closed without any selection (exit code is 1).
 
 Install
 -------

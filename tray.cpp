@@ -194,8 +194,8 @@ public:
         dialogLog_->resize(480, 480);
         dialogLog_->show();
 
-        connect( dialogLog_, SIGNAL(finished(int)), this, SLOT(onLogDialogClosed()) );
         connect( dialogLog_, SIGNAL(itemActivated(int)), this, SLOT(onItemActivated(int)) );
+        connect( dialogLog_, SIGNAL(finished(int)), this, SLOT(onLogDialogClosed()) );
     }
 
     void onInputLine(const QString &line)
@@ -240,7 +240,7 @@ public slots:
             if ( dialogLog_ != nullptr && dialogLog_->hasFocus() )
                 dialogLog_->hide();
         } else if (reason == QSystemTrayIcon::MiddleClick) {
-            q->exit();
+            q->exit(selectMode_ ? 1 : 0);
         }
     }
 
@@ -249,8 +249,11 @@ public slots:
         Q_Q(Tray);
         if ( (row + (endOfInput_ ? 1 : 0)) < records_.size() ) {
             std::cout << records_[row].text.toStdString() << std::endl;
-            if (selectMode_)
+            if (selectMode_) {
+                // Avoid ending with non-zero exit code after next exit call.
+                selectMode_ = false;
                 q->exit();
+            }
         }
     }
 
@@ -272,7 +275,7 @@ public slots:
         Q_Q(Tray);
         dialogLog_->deleteLater();
         if (selectMode_)
-            q->exit();
+            q->exit(1);
     }
 
 protected:
@@ -388,9 +391,9 @@ void Tray::onInputEnd()
     d->onInputEnd();
 }
 
-void Tray::exit()
+void Tray::exit(int exitCode)
 {
-    QApplication::quit();
+    QApplication::exit(exitCode);
 }
 
 void Tray::resetMessages()

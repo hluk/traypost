@@ -191,7 +191,9 @@ void printHelp(const QString &program)
     printLine( QString("  --show-log    ")
                + QObject::tr("Show log dialog at start.") );
     printLine( QString("  --select      ")
-               + QObject::tr("Open log dialog and exit after it's closed or item is selected.") );
+               + QObject::tr("Open log dialog and exit after item is selected (exit code is 0) or")
+               + QString("\n                ")
+               + QObject::tr("dialog is closed without any selection (exit code is 1).") );
     printLine();
     printLine( QString("TrayPost Desktop Tray Notifier " VERSION " (hluk@email.cz)") );
     exit(0);

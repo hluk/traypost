@@ -89,7 +89,7 @@ public slots:
 
     void onInputEnd();
 
-    void exit();
+    void exit(int exitCode = 0);
 
     void resetMessages();
 
