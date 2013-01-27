@@ -29,6 +29,7 @@
 #include <QPainter>
 #include <QPointer>
 #include <QSystemTrayIcon>
+#include <QTimer>
 
 #include <iostream>
 
@@ -64,6 +65,7 @@ public:
         , lines_(0)
         , inputRead_(false)
         , endOfInput_(false)
+        , timeout_(8000)
     {
         tray_.setToolTip( tr("No messages available.") );
         createMenu();
@@ -96,6 +98,10 @@ public:
     {
         connect(&tray_, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
                 this, SLOT(onTrayActivated(QSystemTrayIcon::ActivationReason)));
+
+        timerMessage_.setInterval(1000);
+        timerMessage_.setSingleShot(true);
+        connect( &timerMessage_, SIGNAL(timeout()), SLOT(showMessage()) );
     }
 
     void show()
@@ -242,7 +248,8 @@ public slots:
         tray_.setToolTip(msg);
 
         // TODO: Set message after an interval.
-        tray_.showMessage(QString("TrayPost"), text);
+        message_ = text;
+        timerMessage_.start();
 
         setIconText( QString::number(++lines_) );
 
@@ -272,6 +279,12 @@ public slots:
             std::cout << records_[row].toStdString() << std::endl;
     }
 
+    void showMessage()
+    {
+        tray_.showMessage(QString("TrayPost"), message_, QSystemTrayIcon::NoIcon, timeout_);
+        message_.clear();
+    }
+
 protected:
     Tray * const q_ptr;
     Q_DECLARE_PUBLIC(Tray)
@@ -298,6 +311,10 @@ protected:
     QString recordFormat_;
 
     bool endOfInput_;
+
+    int timeout_;
+    QString message_;
+    QTimer timerMessage_;
 };
 
 Tray::Tray(QObject *parent)
@@ -310,6 +327,12 @@ void Tray::setToolTip(const QString &text)
 {
     Q_D(Tray);
     d->setToolTip(text);
+}
+
+void Tray::setMessageTimeout(int ms)
+{
+    Q_D(Tray);
+    d->timeout_ = ms;
 }
 
 void Tray::setIcon(const QIcon &icon)

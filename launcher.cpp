@@ -166,6 +166,8 @@ void printHelp(const QString &program)
                + QObject::tr("Tray icon text") );
     printLine( QString("  -T, --tooltip {tooltip text}  ")
                + QObject::tr("Tray icon tool tip") );
+    printLine( QString("  --timeout {milliseconds}       ")
+               + QObject::tr("Message show timeout.") );
     printLine( QString("  -c, --color {color=black}     ")
                + QObject::tr("Tray icon text color") );
     printLine( QString("  -o, --outline {color=white}   ")
@@ -221,6 +223,7 @@ void Launcher::start()
     QString timeFormat("dd.MM.yyyy hh:mm:ss.zzz");
     QString recordFormat("<p><small><b>%1</b></small><br />%2</p>");
     bool showLog = false;
+    int timeout = 8000;
 
     Arguments args( qApp->arguments() );
     while ( args.next() ) {
@@ -247,6 +250,13 @@ void Launcher::start()
             if (value.isNull())
                 error( QObject::tr("Option %1 needs text.").arg(name), 2 );
             toolTip = value;
+        } else if (name == "--timeout") {
+            auto &value = args.fetchValue();
+            bool ok;
+            int ms = value.toInt(&ok);
+            if (value.isNull() || !ok)
+                error( QObject::tr("Option %1 needs value in milliseconds.").arg(name), 2 );
+            timeout = ms;
         } else if (name == "-c" || name == "--color") {
             auto &value = args.fetchValue();
             if (value.isNull())
@@ -293,6 +303,7 @@ void Launcher::start()
     tray_ = new traypost::Tray();
     if ( !toolTip.isNull() )
         tray_->setToolTip(toolTip);
+    tray_->setMessageTimeout(timeout);
     tray_->setIcon(icon);
     tray_->setIconText(iconText);
     tray_->setIconTextStyle(font, textColor, textOutlineColor);

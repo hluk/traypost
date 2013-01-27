@@ -40,6 +40,11 @@ public:
     void setToolTip(const QString &text);
 
     /**
+     * Set timeout for messages.
+     */
+    void setMessageTimeout(int ms);
+
+    /**
      * Set tray icon.
      */
     void setIcon(const QIcon &icon);
