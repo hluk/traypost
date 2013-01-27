@@ -215,7 +215,7 @@ void Launcher::start()
     QColor textOutlineColor;
     QFont font = QApplication::font();
     QString timeFormat("dd.MM.yyyy hh:mm:ss.zzz");
-    QString recordFormat("<p><small><b>%1</b></small>: %2</p>");
+    QString recordFormat("<p><small><b>%1</b></small><br /> %2</p>");
 
     Arguments args( qApp->arguments() );
     while ( args.next() ) {
