@@ -55,6 +55,16 @@ public:
     void setIconTextStyle(const QFont &font, const QColor &color, const QColor &outlineColor);
 
     /**
+     * Set format of time.
+     */
+    void setTimeFormat(const QString &format);
+
+    /**
+     * Set format of each message/record.
+     */
+    void setMessageFormat(const QString &format);
+
+    /**
      * Show tray icon.
      */
     void show();

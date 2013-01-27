@@ -53,9 +53,6 @@ QString escapeHtml(const QString &str)
 
 } // namespace
 
-const QString timeFormat("dd.MM.yyyy hh:mm:ss.zzz");
-const QString recordFormat("<p><small><b>%1</b></small>: %2</p>");
-constexpr int stdinBatchSize = 250;
 constexpr int maxMessageLines = 10;
 
 class TrayPrivate : public QObject {
@@ -245,8 +242,8 @@ public:
 public slots:
     void setToolTip(const QString &text, bool endOfInput = false)
     {
-        auto record = recordFormat
-                .arg( QDateTime::currentDateTime().toString(timeFormat) )
+        auto record = recordFormat_
+                .arg( QDateTime::currentDateTime().toString(timeFormat_) )
                 .arg( endOfInput ? QString("<b><u>%1</u></b>").arg(text) : escapeHtml(text) );
         records_.append(record);
 
@@ -303,6 +300,9 @@ protected:
     QStringList records_;
 
     bool inputRead_;
+
+    QString timeFormat_;
+    QString recordFormat_;
 };
 
 Tray::Tray(QObject *parent)
@@ -333,6 +333,18 @@ void Tray::setIconTextStyle(const QFont &font, const QColor &color, const QColor
 {
     Q_D(Tray);
     d->setIconTextStyle(font, color, outlineColor);
+}
+
+void Tray::setTimeFormat(const QString &format)
+{
+    Q_D(Tray);
+    d->timeFormat_ = format;
+}
+
+void Tray::setMessageFormat(const QString &format)
+{
+    Q_D(Tray);
+    d->recordFormat_ = format;
 }
 
 void Tray::show()

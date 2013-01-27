@@ -158,13 +158,24 @@ void printLine(const QString &line = QString())
 void printHelp(const QString &program)
 {
     printLine( QObject::tr("Usage: %1 [Options]").arg(program) );
-    printLine( QString("  -h, --help                    ") + QObject::tr("Print help.") );
-    printLine( QString("  -i, --icon {file name}        ") + QObject::tr("Set icon.") );
-    printLine( QString("  -t, --text {icon text}        ") + QObject::tr("Set icon text.") );
-    printLine( QString("  -T, --tooltip {tooltip text}  ") + QObject::tr("Set icon tool tip.") );
-    printLine( QString("  -c, --color {color=black}     ") + QObject::tr("Set icon text color.") );
-    printLine( QString("  -o, --outline {color=white}   ") + QObject::tr("Set icon text outline color.") );
-    printLine( QString("  -f, --font {font}             ") + QObject::tr("Set icon text font.") );
+    printLine( QString("  -h, --help                    ")
+               + QObject::tr("Print help.") );
+    printLine( QString("  -i, --icon {file name}        ")
+               + QObject::tr("Tray icon") );
+    printLine( QString("  -t, --text {icon text}        ")
+               + QObject::tr("Tray icon text") );
+    printLine( QString("  -T, --tooltip {tooltip text}  ")
+               + QObject::tr("Tray icon tool tip") );
+    printLine( QString("  -c, --color {color=black}     ")
+               + QObject::tr("Tray icon text color") );
+    printLine( QString("  -o, --outline {color=white}   ")
+               + QObject::tr("Tray icon text outline color") );
+    printLine( QString("  -f, --font {font}             ")
+               + QObject::tr("Tray icon text font") );
+    printLine( QString("  --time-format {format}        ")
+               + QObject::tr("Time format for messages (e.g. 'dd.MM.yyyy hh:mm:ss.zzz')") );
+    printLine( QString("  --message-format {format}     ")
+               + QObject::tr("Format for messages (HTML; %1 is message time, %2 message text)") );
     printLine();
     printLine( QString("TrayPost Desktop Tray Notifier " VERSION " (hluk@email.cz)") );
     exit(0);
@@ -203,6 +214,8 @@ void Launcher::start()
     QColor textColor;
     QColor textOutlineColor;
     QFont font = QApplication::font();
+    QString timeFormat("dd.MM.yyyy hh:mm:ss.zzz");
+    QString recordFormat("<p><small><b>%1</b></small>: %2</p>");
 
     Arguments args( qApp->arguments() );
     while ( args.next() ) {
@@ -248,6 +261,16 @@ void Launcher::start()
             if (value.isNull())
                 error( QObject::tr("Option %1 needs font name.").arg(name), 2 );
             font = fontFromString(value);
+        } else if (name == "--time-format") {
+            auto &value = args.fetchValue();
+            if (value.isNull())
+                error( QObject::tr("Option %1 needs format text.").arg(name), 2 );
+            timeFormat = value;
+        } else if (name == "--message-format") {
+            auto &value = args.fetchValue();
+            if (value.isNull())
+                error( QObject::tr("Option %1 needs format text.").arg(name), 2 );
+            recordFormat = value;
         } else {
             error( QObject::tr("Unknown option \"%1\".").arg(name), 2 );
         }
@@ -266,6 +289,8 @@ void Launcher::start()
     tray_->setIcon(icon);
     tray_->setIconText(iconText);
     tray_->setIconTextStyle(font, textColor, textOutlineColor);
+    tray_->setTimeFormat(timeFormat);
+    tray_->setMessageFormat(recordFormat);
     tray_->show();
 
     connect( reader_, SIGNAL(finished()), tray_, SLOT(onInputEnd()) );
