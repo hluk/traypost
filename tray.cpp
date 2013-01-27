@@ -29,8 +29,11 @@
 #include <QMenu>
 #include <QPainter>
 #include <QPointer>
+#include <QScrollBar>
 #include <QSystemTrayIcon>
-#include <QTextEdit>
+#include <QListWidget>
+
+#include <iostream>
 
 #if QT_VERSION < 0x050000
 #   include <QTextDocument> // Qt::escape()
@@ -63,6 +66,7 @@ public:
         , q_ptr(parent)
         , lines_(0)
         , inputRead_(false)
+        , endOfInput_(false)
     {
         tray_.setToolTip( tr("No messages available.") );
         createMenu();
@@ -212,10 +216,13 @@ public:
 
         auto layout = new QVBoxLayout(dialogLog_);
 
-        textEditLog_ = new QTextEdit(dialogLog_);
-        textEditLog_->setHtml( records_.join(QString()) );
-        textEditLog_->setReadOnly(true);
-        layout->addWidget(textEditLog_);
+        listLog_ = new QListWidget(dialogLog_);
+        for (auto &record : records_) {
+            addRecordItem(record);
+        }
+        connect( listLog_.data(), SIGNAL(itemActivated(QListWidgetItem*)),
+                 this, SLOT(onItemActivated(QListWidgetItem*)) );
+        layout->addWidget(listLog_);
 
         auto buttons = new QDialogButtonBox(QDialogButtonBox::Ok, Qt::Horizontal, dialogLog_);
         layout->addWidget(buttons);
@@ -239,9 +246,32 @@ public:
             setToolTip( tr("-- END OF INPUT --"), true );
     }
 
+    void addRecordItem(const QString &record)
+    {
+        Q_ASSERT(listLog_ != nullptr);
+
+        auto scrollBar = listLog_->verticalScrollBar();
+        bool atBottom = scrollBar->value() == scrollBar->maximum();
+
+        auto item = new QListWidgetItem(listLog_);
+        auto w = new QLabel( record, listLog_.data() );
+        w->setContentsMargins(4, 4, 4, 4);
+        item->setSizeHint(w->sizeHint());
+        listLog_->addItem(item);
+        listLog_->setItemWidget(item, w);
+
+        if (atBottom)
+            listLog_->scrollToItem(item);
+    }
+
 public slots:
     void setToolTip(const QString &text, bool endOfInput = false)
     {
+        if (endOfInput_)
+            return;
+
+        endOfInput_ = endOfInput;
+
         auto record = recordFormat_
                 .arg( QDateTime::currentDateTime().toString(timeFormat_) )
                 .arg( endOfInput ? QString("<b><u>%1</u></b>").arg(text) : escapeHtml(text) );
@@ -252,12 +282,13 @@ public slots:
             msg.append(records_[i]);
         tray_.setToolTip(msg);
 
+        // TODO: Set message after an interval.
         tray_.showMessage(QString("TrayPost"), text);
 
         setIconText( QString::number(++lines_) );
 
-        if (textEditLog_ != nullptr) {
-            textEditLog_->append(record);
+        if (listLog_ != nullptr) {
+            addRecordItem(record);
             showLog();
         }
     }
@@ -278,6 +309,16 @@ public slots:
         }
     }
 
+    void onItemActivated(QListWidgetItem *item)
+    {
+        if (listLog_ == nullptr)
+            return;
+
+        int row = listLog_->row(item);
+        if ( (row + (endOfInput_ ? 1 : 0)) < listLog_->count() )
+            std::cout << records_[row].toStdString() << std::endl;
+    }
+
 protected:
     Tray * const q_ptr;
     Q_DECLARE_PUBLIC(Tray)
@@ -287,7 +328,7 @@ protected:
     QPointer<QAction> actionReset_;
     QPointer<QAction> actionShowLog_;
     QPointer<QDialog> dialogLog_;
-    QPointer<QTextEdit> textEditLog_;
+    QPointer<QListWidget> listLog_;
     QIcon icon_;
 
     QString iconText_;
@@ -303,6 +344,8 @@ protected:
 
     QString timeFormat_;
     QString recordFormat_;
+
+    bool endOfInput_;
 };
 
 Tray::Tray(QObject *parent)
