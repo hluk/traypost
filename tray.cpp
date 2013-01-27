@@ -18,20 +18,17 @@
 */
 
 #include "tray.h"
+#include "log_dialog.h"
 
 #include <QApplication>
 #include <QDateTime>
-#include <QDialog>
-#include <QDialogButtonBox>
 #include <QFile>
 #include <QLabel>
 #include <QLayout>
 #include <QMenu>
 #include <QPainter>
 #include <QPointer>
-#include <QScrollBar>
 #include <QSystemTrayIcon>
-#include <QListWidget>
 
 #include <iostream>
 
@@ -175,11 +172,9 @@ public:
         tray_.setIcon(icon);
 
         bool showReset = !iconText_.isEmpty();
-        bool showLog = !records_.isEmpty();
 
         actionReset_->setVisible(showReset);
-        actionShowLog_->setVisible(showLog);
-        menu_.setDefaultAction(showReset ? actionReset_ : showLog ? actionShowLog_ : nullptr);
+        menu_.setDefaultAction(showReset ? actionReset_ : actionShowLog_);
     }
 
     void setIconTextStyle(const QFont &font, const QColor &color, const QColor &outlineColor)
@@ -199,9 +194,6 @@ public:
 
     void showLog()
     {
-        if ( records_.isEmpty() )
-            return;
-
         if (dialogLog_ != nullptr) {
             dialogLog_->show();
             dialogLog_->activateWindow();
@@ -210,28 +202,13 @@ public:
             return;
         }
 
-        dialogLog_ = new QDialog();
-        dialogLog_->setWindowTitle( tr("TrayPost - Log") );
+        dialogLog_ = new LogDialog(records_);
         dialogLog_->setWindowIcon(icon_);
-
-        auto layout = new QVBoxLayout(dialogLog_);
-
-        listLog_ = new QListWidget(dialogLog_);
-        for (auto &record : records_) {
-            addRecordItem(record);
-        }
-        connect( listLog_.data(), SIGNAL(itemActivated(QListWidgetItem*)),
-                 this, SLOT(onItemActivated(QListWidgetItem*)) );
-        layout->addWidget(listLog_);
-
-        auto buttons = new QDialogButtonBox(QDialogButtonBox::Ok, Qt::Horizontal, dialogLog_);
-        layout->addWidget(buttons);
+        dialogLog_->resize(480, 480);
+        dialogLog_->show();
 
         connect( dialogLog_, SIGNAL(finished(int)), dialogLog_, SLOT(deleteLater()) );
-        connect( buttons, SIGNAL(accepted()), dialogLog_, SLOT(accept()) );
-
-        dialogLog_->resize(320, 480);
-        dialogLog_->show();
+        connect( dialogLog_, SIGNAL(itemActivated(int)), this, SLOT(onItemActivated(int)) );
     }
 
     void onInputLine(const QString &line)
@@ -244,24 +221,6 @@ public:
     {
         if (inputRead_)
             setToolTip( tr("-- END OF INPUT --"), true );
-    }
-
-    void addRecordItem(const QString &record)
-    {
-        Q_ASSERT(listLog_ != nullptr);
-
-        auto scrollBar = listLog_->verticalScrollBar();
-        bool atBottom = scrollBar->value() == scrollBar->maximum();
-
-        auto item = new QListWidgetItem(listLog_);
-        auto w = new QLabel( record, listLog_.data() );
-        w->setContentsMargins(4, 4, 4, 4);
-        item->setSizeHint(w->sizeHint());
-        listLog_->addItem(item);
-        listLog_->setItemWidget(item, w);
-
-        if (atBottom)
-            listLog_->scrollToItem(item);
     }
 
 public slots:
@@ -287,10 +246,8 @@ public slots:
 
         setIconText( QString::number(++lines_) );
 
-        if (listLog_ != nullptr) {
-            addRecordItem(record);
-            showLog();
-        }
+        if (dialogLog_ != nullptr)
+            dialogLog_->addRecord(record);
     }
 
     void onTrayActivated(QSystemTrayIcon::ActivationReason reason)
@@ -309,13 +266,9 @@ public slots:
         }
     }
 
-    void onItemActivated(QListWidgetItem *item)
+    void onItemActivated(int row)
     {
-        if (listLog_ == nullptr)
-            return;
-
-        int row = listLog_->row(item);
-        if ( (row + (endOfInput_ ? 1 : 0)) < listLog_->count() )
+        if ( (row + (endOfInput_ ? 1 : 0)) < records_.size() )
             std::cout << records_[row].toStdString() << std::endl;
     }
 
@@ -327,8 +280,7 @@ protected:
     QMenu menu_;
     QPointer<QAction> actionReset_;
     QPointer<QAction> actionShowLog_;
-    QPointer<QDialog> dialogLog_;
-    QPointer<QListWidget> listLog_;
+    QPointer<LogDialog> dialogLog_;
     QIcon icon_;
 
     QString iconText_;

@@ -78,6 +78,9 @@ public slots:
 
     void resetMessages();
 
+    /**
+     * Show log dialog.
+     */
     void showLog();
 
 signals:

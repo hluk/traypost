@@ -176,6 +176,8 @@ void printHelp(const QString &program)
                + QObject::tr("Time format for messages (e.g. 'dd.MM.yyyy hh:mm:ss.zzz')") );
     printLine( QString("  --message-format {format}     ")
                + QObject::tr("Format for messages (HTML; %1 is message time, %2 message text)") );
+    printLine( QString("  --show-log                    ")
+               + QObject::tr("Show log dialog at start.") );
     printLine();
     printLine( QString("TrayPost Desktop Tray Notifier " VERSION " (hluk@email.cz)") );
     exit(0);
@@ -216,6 +218,7 @@ void Launcher::start()
     QFont font = QApplication::font();
     QString timeFormat("dd.MM.yyyy hh:mm:ss.zzz");
     QString recordFormat("<p><small><b>%1</b></small><br /> %2</p>");
+    bool showLog = false;
 
     Arguments args( qApp->arguments() );
     while ( args.next() ) {
@@ -271,6 +274,8 @@ void Launcher::start()
             if (value.isNull())
                 error( QObject::tr("Option %1 needs format text.").arg(name), 2 );
             recordFormat = value;
+        } else if (name == "--show-log") {
+            showLog = true;
         } else {
             error( QObject::tr("Unknown option \"%1\".").arg(name), 2 );
         }
@@ -292,6 +297,8 @@ void Launcher::start()
     tray_->setTimeFormat(timeFormat);
     tray_->setMessageFormat(recordFormat);
     tray_->show();
+    if (showLog)
+        tray_->showLog();
 
     connect( reader_, SIGNAL(finished()), tray_, SLOT(onInputEnd()) );
     connect( reader_, SIGNAL(newLine(QString)), tray_, SLOT(onInputLine(QString)) );

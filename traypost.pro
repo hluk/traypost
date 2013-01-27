@@ -13,11 +13,16 @@ TEMPLATE = app
 
 SOURCES += main.cpp \
     tray.cpp \
+    launcher.cpp \
     console_reader.cpp \
-    launcher.cpp
+    log_dialog.cpp
 
 HEADERS  += tray.h \
     launcher.h \
-    console_reader.h
+    console_reader.h \
+    log_dialog.h
 
 QMAKE_CXXFLAGS += -std=c++0x
+
+FORMS += \
+    log_dialog.ui
