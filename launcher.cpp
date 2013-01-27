@@ -184,7 +184,7 @@ void printHelp(const QString &program)
     printLine( QString("  --message-format {format}     ")
                + QObject::tr("Format for messages (HTML; %1 is message, %2 is message time)")
                + QString("\n                                ")
-               + QObject::tr("Example: '<p><small><b>%1</b></small><br />%2</p>'") );
+               + QObject::tr("Example: '<p><small><b>%2</b></small><br />%1</p>'") );
     printLine();
     printLine( QString("  --record-end                  ")
                + QObject::tr("Record end of stdin.") );
