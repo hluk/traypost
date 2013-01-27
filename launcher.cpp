@@ -179,12 +179,12 @@ void printHelp(const QString &program)
     printLine();
     printLine( QString("  --timeout {milliseconds}      ")
                + QObject::tr("Message show timeout.") );
-    printLine( QString("  --time-format {format}        ")
-               + QObject::tr("Time format for messages (e.g. 'dd.MM.yyyy hh:mm:ss.zzz')") );
-    printLine( QString("  --message-format {format}     ")
+    printLine( QString("  --format {format}     ")
                + QObject::tr("Format for messages (HTML; %1 is message, %2 is message time)")
                + QString("\n                                ")
                + QObject::tr("Example: '<p><small><b>%2</b></small><br />%1</p>'") );
+    printLine( QString("  --time-format {format}        ")
+               + QObject::tr("Time format for messages (e.g. 'dd.MM.yyyy hh:mm:ss.zzz')") );
     printLine();
     printLine( QString("  --record-end  ")
                + QObject::tr("Record end of stdin.") );
@@ -293,7 +293,7 @@ void Launcher::start()
             if (value.isNull())
                 error( QObject::tr("Option %1 needs format text.").arg(name), 2 );
             timeFormat = value;
-        } else if (name == "--message-format") {
+        } else if (name == "--format") {
             auto &value = args.fetchValue();
             if (value.isNull())
                 error( QObject::tr("Option %1 needs format text.").arg(name), 2 );

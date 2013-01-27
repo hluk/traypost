@@ -26,13 +26,13 @@ Command Line
       -T, --tooltip {tooltip text}  Tray icon default tool tip text
 
       --timeout {milliseconds}      Message show timeout.
+      --format {format}     Format for messages (HTML; %1 is message, %2 is message time)
+                                    Example: '<p><small><b>%2</b></small><br />%1</p>'
       --time-format {format}        Time format for messages (e.g. 'dd.MM.yyyy hh:mm:ss.zzz')
-      --message-format {format}     Format for messages (HTML; %1 is message, %2 is message time)
-                                    Example: '<p><small><b>%1</b></small><br />%2</p>'
 
-      --record-end                  Record end of stdin.
-      --show-log                    Show log dialog at start.
-      --select                      Open log dialog and exit after it is closed.
+      --record-end  Record end of stdin.
+      --show-log    Show log dialog at start.
+      --select      Open log dialog and exit after it's closed or item is selected.
 
 Install
 -------
