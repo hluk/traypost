@@ -158,32 +158,38 @@ void printLine(const QString &line = QString())
 void printHelp(const QString &program)
 {
     printLine( QObject::tr("Usage: %1 [Options]").arg(program) );
+    printLine( QObject::tr("Options:") );
     printLine( QString("  -h, --help                    ")
                + QObject::tr("Print help.") );
+    printLine();
     printLine( QString("  -i, --icon {file name}        ")
                + QObject::tr("Tray icon") );
     printLine( QString("  -t, --text {icon text}        ")
                + QObject::tr("Tray icon text") );
-    printLine( QString("  -T, --tooltip {tooltip text}  ")
-               + QObject::tr("Tray icon tool tip") );
-    printLine( QString("  --timeout {milliseconds}       ")
-               + QObject::tr("Message show timeout.") );
     printLine( QString("  -c, --color {color=black}     ")
                + QObject::tr("Tray icon text color") );
     printLine( QString("  -o, --outline {color=white}   ")
                + QObject::tr("Tray icon text outline color") );
     printLine( QString("  -f, --font {font}             ")
-               + QObject::tr("Tray icon text font") );
+               + QObject::tr("Tray icon text font (e.g. 'DejaVu Sans, 10, bold, underline')")
+               + QString("\n                                ")
+               + QObject::tr("Font options: italic, bold, overline, underline, strikeout") );
+    printLine( QString("  -T, --tooltip {tooltip text}  ")
+               + QObject::tr("Tray icon default tool tip text") );
+    printLine();
+    printLine( QString("  --timeout {milliseconds}      ")
+               + QObject::tr("Message show timeout.") );
     printLine( QString("  --time-format {format}        ")
                + QObject::tr("Time format for messages (e.g. 'dd.MM.yyyy hh:mm:ss.zzz')") );
     printLine( QString("  --message-format {format}     ")
                + QObject::tr("Format for messages (HTML; %1 is message, %2 is message time)")
                + QString("\n                                ")
                + QObject::tr("Example: '<p><small><b>%1</b></small><br />%2</p>'") );
-    printLine( QString("  --show-log                    ")
-               + QObject::tr("Show log dialog at start.") );
+    printLine();
     printLine( QString("  --record-end                  ")
                + QObject::tr("Record end of stdin.") );
+    printLine( QString("  --show-log                    ")
+               + QObject::tr("Show log dialog at start.") );
     printLine( QString("  --select                      ")
                + QObject::tr("Open log dialog and exit after it is closed.") );
     printLine();
