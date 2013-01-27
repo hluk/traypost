@@ -18,6 +18,7 @@
 */
 
 #include <QDialog>
+#include <QDateTime>
 
 class QListWidgetItem;
 
@@ -27,14 +28,25 @@ class LogDialog;
 
 namespace traypost {
 
+struct Record {
+    Record() : text(), time() {}
+    Record(const QString &text) : text(text), time(QDateTime::currentDateTime()) {}
+    QString toString(const QString &format, const QString &timeFormat) const;
+
+    QString text;
+    QDateTime time;
+};
+
 class LogDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit LogDialog(const QStringList &records, QWidget *parent = nullptr);
+    explicit LogDialog(const QList<Record> &records, const QString &format,
+                       const QString &timeFormat, QWidget *parent = nullptr);
+
     ~LogDialog();
 
-    void addRecord(const QString &record);
+    void addRecord(const Record &record);
 
     bool isFilteredOut(QListWidgetItem *item, const QString &text) const;
 
@@ -47,9 +59,11 @@ private slots:
     void on_lineEditSearch_textChanged(const QString &text);
 
 private:
-    QListWidgetItem* createRecord(const QString &record);
+    QListWidgetItem *createRecord(const Record &record);
 
     Ui::LogDialog *ui;
+    QString timeFormat_;
+    QString format_;
 };
 
 } // namespace traypost

@@ -177,7 +177,7 @@ void printHelp(const QString &program)
     printLine( QString("  --time-format {format}        ")
                + QObject::tr("Time format for messages (e.g. 'dd.MM.yyyy hh:mm:ss.zzz')") );
     printLine( QString("  --message-format {format}     ")
-               + QObject::tr("Format for messages (HTML; %1 is message time, %2 message text)")
+               + QObject::tr("Format for messages (HTML; %1 is message, %2 is message time)")
                + QString("\n                                ")
                + QObject::tr("Example: '<p><small><b>%1</b></small><br />%2</p>'") );
     printLine( QString("  --show-log                    ")
@@ -221,7 +221,7 @@ void Launcher::start()
     QColor textOutlineColor;
     QFont font = QApplication::font();
     QString timeFormat("dd.MM.yyyy hh:mm:ss.zzz");
-    QString recordFormat("<p><small><b>%1</b></small><br />%2</p>");
+    QString recordFormat("<p><small><b>%2</b></small><br />%1</p>");
     bool showLog = false;
     int timeout = 8000;
 

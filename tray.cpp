@@ -33,26 +33,7 @@
 
 #include <iostream>
 
-#if QT_VERSION < 0x050000
-#   include <QTextDocument> // Qt::escape()
-#endif
-
-#include <stdio.h>
-
 namespace traypost {
-
-namespace {
-
-QString escapeHtml(const QString &str)
-{
-#if QT_VERSION < 0x050000
-    return Qt::escape(str);
-#else
-    return str.toHtmlEscaped();
-#endif
-}
-
-} // namespace
 
 constexpr int maxMessageLines = 10;
 
@@ -208,7 +189,7 @@ public:
             return;
         }
 
-        dialogLog_ = new LogDialog(records_);
+        dialogLog_ = new LogDialog(records_, recordFormat_, timeFormat_);
         dialogLog_->setWindowIcon(icon_);
         dialogLog_->resize(480, 480);
         dialogLog_->show();
@@ -237,24 +218,14 @@ public slots:
 
         endOfInput_ = endOfInput;
 
-        auto record = recordFormat_
-                .arg( QDateTime::currentDateTime().toString(timeFormat_) )
-                .arg( endOfInput ? QString("<b><u>%1</u></b>").arg(text) : escapeHtml(text) );
-        records_.append(record);
+        records_.append( Record(text) );
 
-        QString msg = records_.size() > maxMessageLines ? QString("<p>...</p>") : QString();
-        for (int i = qMax(0, records_.size() - maxMessageLines); i < records_.size(); ++i)
-            msg.append(records_[i]);
-        tray_.setToolTip(msg);
-
-        // TODO: Set message after an interval.
-        message_ = text;
         timerMessage_.start();
 
         setIconText( QString::number(++lines_) );
 
         if (dialogLog_ != nullptr)
-            dialogLog_->addRecord(record);
+            dialogLog_->addRecord( records_.last() );
     }
 
     void onTrayActivated(QSystemTrayIcon::ActivationReason reason)
@@ -275,14 +246,22 @@ public slots:
 
     void onItemActivated(int row)
     {
-        if ( (row + (endOfInput_ ? 1 : 0)) < records_.size() )
-            std::cout << records_[row].toStdString() << std::endl;
+        if ( (row + (endOfInput_ ? 1 : 0)) < records_.size() ) {
+            std::cout << records_[row].text.toStdString() << std::endl;
+        }
     }
 
     void showMessage()
     {
-        tray_.showMessage(QString("TrayPost"), message_, QSystemTrayIcon::NoIcon, timeout_);
-        message_.clear();
+        const auto size = records_.size();
+        QString msg = size > maxMessageLines ? QString("<p>...</p>") : QString();
+        for (int i = qMax(0, size - maxMessageLines); i < size; ++i) {
+            msg.append( records_[i].toString(recordFormat_, timeFormat_) );
+        }
+        tray_.setToolTip(msg);
+
+        tray_.showMessage(QString("TrayPost"), records_.last().text, QSystemTrayIcon::NoIcon,
+                          timeout_);
     }
 
 protected:
@@ -303,7 +282,7 @@ protected:
 
     int lines_;
 
-    QStringList records_;
+    QList<Record> records_;
 
     bool inputRead_;
 
@@ -313,7 +292,6 @@ protected:
     bool endOfInput_;
 
     int timeout_;
-    QString message_;
     QTimer timerMessage_;
 };
 

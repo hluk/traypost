@@ -22,11 +22,36 @@
 
 #include <QScrollBar>
 
+#if QT_VERSION < 0x050000
+#   include <QTextDocument> // Qt::escape()
+#endif
+
 namespace traypost {
 
-LogDialog::LogDialog(const QStringList &records, QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::LogDialog)
+namespace {
+
+QString escapeHtml(const QString &str)
+{
+#if QT_VERSION < 0x050000
+    return Qt::escape(str);
+#else
+    return str.toHtmlEscaped();
+#endif
+}
+
+} // namespace
+
+QString Record::toString(const QString &format, const QString &timeFormat) const
+{
+    return format.arg(text).arg( time.toString(timeFormat) );
+}
+
+LogDialog::LogDialog(const QList<Record> &records, const QString &format,
+                     const QString &timeFormat, QWidget *parent)
+    : QDialog(parent)
+    , ui(new Ui::LogDialog)
+    , timeFormat_(timeFormat)
+    , format_(format)
 {
     ui->setupUi(this);
     ui->listLog->setUniformItemSizes(true);
@@ -43,7 +68,7 @@ LogDialog::~LogDialog()
     delete ui;
 }
 
-void LogDialog::addRecord(const QString &record)
+void LogDialog::addRecord(const Record &record)
 {
     auto scrollBar = ui->listLog->verticalScrollBar();
     bool atBottom = scrollBar->value() == scrollBar->maximum();
@@ -83,9 +108,9 @@ void LogDialog::on_lineEditSearch_textChanged(const QString &text)
     }
 }
 
-QListWidgetItem *LogDialog::createRecord(const QString &record)
+QListWidgetItem *LogDialog::createRecord(const Record &record)
 {
-    auto w = new QLabel( record, ui->listLog );
+    auto w = new QLabel( record.toString(format_, timeFormat_), ui->listLog );
     w->setContentsMargins(4, 4, 4, 4);
 
     auto item = new QListWidgetItem(ui->listLog);
