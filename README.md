@@ -34,3 +34,11 @@ Command Line
       --show-log                    Show log dialog at start.
       --select                      Open log dialog and exit after it is closed.
 
+Install
+-------
+
+To install on your system run following commands in source code directory.
+
+    cmake .
+    make install
+
