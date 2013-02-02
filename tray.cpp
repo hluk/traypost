@@ -260,8 +260,9 @@ public slots:
     void showMessage()
     {
         const auto size = records_.size();
-        QString msg = size > maxMessageLines ? QString("<p>...</p>") : QString();
-        for (int i = qMax(0, size - maxMessageLines); i < size; ++i) {
+        int maxLines = qMin(maxMessageLines, lines_);
+        QString msg = lines_ > maxLines ? QString("<p>...</p>") : QString();
+        for (int i = qMax(0, size - maxLines); i < size; ++i) {
             msg.append( records_[i].toString(recordFormat_, timeFormat_) );
         }
         tray_.setToolTip(msg);
