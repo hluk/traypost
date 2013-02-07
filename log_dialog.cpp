@@ -43,7 +43,7 @@ QString escapeHtml(const QString &str)
 
 QString Record::toString(const QString &format, const QString &timeFormat) const
 {
-    return format.arg(text).arg( time.toString(timeFormat) );
+    return format.arg( escapeHtml(text) ).arg( time.toString(timeFormat) );
 }
 
 LogDialog::LogDialog(const QList<Record> &records, const QString &format,
